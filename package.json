@@ -1,0 +1,19 @@
+{
+  "name": "expense-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "In-memory HTTP API for recording expenses and summarizing them by category.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node src/index.ts",
+    "test": "node --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  }
+}
