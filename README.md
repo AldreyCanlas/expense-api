@@ -17,7 +17,7 @@ The server listens on port 3000, or on `PORT` when that variable is set.
 
 ## API
 
-Amounts are decimal numbers in major units (for example, `12.5` dollars). Dates use `YYYY-MM-DD`. `from` and `to` are inclusive.
+Amounts are decimal numbers in major units (for example, `12.5` dollars). Totals are added in integer cents and then converted back to major units. Dates use `YYYY-MM-DD`. `from` and `to` are inclusive.
 
 ### `GET /health`
 

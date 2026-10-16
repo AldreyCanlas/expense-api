@@ -6,7 +6,7 @@ export function isWithinRange(date: string, from?: string, to?: string): boolean
   if (from !== undefined && date < from) {
     return false;
   }
-  if (to !== undefined && date >= to) {
+  if (to !== undefined && date > to) {
     return false;
   }
   return true;
