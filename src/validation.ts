@@ -66,7 +66,7 @@ function parseCategory(value: unknown): string {
   if (typeof value !== "string") {
     throw new HttpError(400, "invalid_category", "category must be a string.", "category");
   }
-  const category = value.trim();
+  const category = canonicalCategory(value);
   if (category.length === 0) {
     throw new HttpError(400, "invalid_category", "category must not be empty.", "category");
   }
@@ -81,6 +81,10 @@ function parseCategory(value: unknown): string {
   return category;
 }
 
+export function canonicalCategory(value: string): string {
+  return value.trim().replace(/[\u0300-\u036f]/g, "");
+}
+
 function parseCalendarDate(value: unknown, field: string): string {
   if (typeof value !== "string") {
     throw new HttpError(400, "invalid_date", `${field} must be a calendar date in YYYY-MM-DD form.`, field);
@@ -92,13 +96,22 @@ function parseCalendarDate(value: unknown, field: string): string {
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  const real =
-    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
-  if (!real) {
+  if (month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) {
     throw new HttpError(400, "invalid_date", `${field} must be a real calendar date.`, field);
   }
   return value;
+}
+
+function daysInMonth(year: number, month: number): number {
+  if (month === 2) {
+    return isLeapYear(year) ? 29 : 28;
+  }
+  const longMonths = (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 10) | (1 << 12);
+  return (longMonths & (1 << month)) !== 0 ? 31 : 30;
+}
+
+function isLeapYear(year: number): boolean {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
 function decimalPlaces(amount: number): number {

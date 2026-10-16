@@ -3,7 +3,7 @@ import { errorBody, HttpError } from "./errors.ts";
 import { ExpenseStore } from "./store.ts";
 import { filterExpenses, summarize } from "./summary.ts";
 import type { ExpenseQuery } from "./types.ts";
-import { parseCreateExpense, parseOptionalDate } from "./validation.ts";
+import { canonicalCategory, parseCreateExpense, parseOptionalDate } from "./validation.ts";
 
 const MAX_BODY_BYTES = 1_000_000;
 
@@ -76,8 +76,17 @@ function readQuery(url: URL): ExpenseQuery {
   return {
     from: parseOptionalDate(optionalParam(url, "from"), "from"),
     to: parseOptionalDate(optionalParam(url, "to"), "to"),
-    category: optionalParam(url, "category"),
+    category: readCategory(url),
   };
+}
+
+function readCategory(url: URL): string | undefined {
+  const value = optionalParam(url, "category");
+  if (value === undefined) {
+    return undefined;
+  }
+  const category = canonicalCategory(value);
+  return category.length === 0 ? undefined : category;
 }
 
 function optionalParam(url: URL, name: string): string | undefined {
