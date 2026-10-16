@@ -58,6 +58,12 @@ describe("expense routes", () => {
       body: JSON.stringify({ category: "food", occurredOn: "2026-04-04" }),
     });
     assert.equal(response.status, 400);
-    assert.equal((response.body as { error: string }).error, "amount must be a number.");
+    assert.deepEqual(response.body, {
+      error: {
+        code: "invalid_amount",
+        message: "amount must be a finite number.",
+        field: "amount",
+      },
+    });
   });
 });
