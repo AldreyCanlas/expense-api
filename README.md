@@ -73,7 +73,7 @@ Creates or replaces the limit for one category in a month.
 { "month": "2026-01", "category": "food", "limit": 200 }
 ```
 
-Category names match expenses exactly, including letter case.
+Category names match expenses by letter case. Spaces at either end are ignored.
 
 ### `GET /budgets?month=YYYY-MM`
 

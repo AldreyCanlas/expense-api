@@ -2,6 +2,13 @@ import { HttpError } from "./errors.ts";
 import { sumAmounts } from "./money.ts";
 import type { Budget, BudgetStatus, Expense } from "./types.ts";
 
+const monthLabel = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Etc/GMT-12",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 export function parseBudget(body: unknown): Budget {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
     throw new HttpError(400, "Expected a JSON object.");
@@ -11,16 +18,20 @@ export function parseBudget(body: unknown): Budget {
   if (typeof record.month !== "string" || !isMonth(record.month)) {
     throw new HttpError(400, "month must be YYYY-MM.");
   }
-  if (typeof record.category !== "string" || record.category.length === 0) {
+  if (typeof record.category !== "string") {
     throw new HttpError(400, "category must be a non-empty string.");
   }
-  if (typeof record.limit !== "number" || Number.isNaN(record.limit)) {
-    throw new HttpError(400, "limit must be a number.");
+  const category = record.category.trim();
+  if (category.length === 0) {
+    throw new HttpError(400, "category must be a non-empty string.");
+  }
+  if (typeof record.limit !== "number" || !Number.isFinite(record.limit) || record.limit < 0) {
+    throw new HttpError(400, "limit must be zero or greater.");
   }
 
   return {
     month: record.month,
-    category: record.category,
+    category,
     limit: record.limit,
   };
 }
@@ -53,7 +64,7 @@ export function budgetStatuses(
         expenses
           .filter(
             (expense) =>
-              expense.occurredOn.startsWith(`${month}-`) && expense.category === budget.category,
+              expenseMonth(expense.occurredOn) === month && sameCategory(expense.category, budget.category),
           )
           .map((expense) => expense.amount),
       );
@@ -67,4 +78,14 @@ export function budgetStatuses(
       };
     })
     .sort((left, right) => left.category.localeCompare(right.category));
+}
+
+function expenseMonth(occurredOn: string): string {
+  const [year, month, day] = occurredOn.split("-").map(Number);
+  const instant = new Date(Date.UTC(year, month - 1, day, 12));
+  return monthLabel.format(instant).slice(0, 7);
+}
+
+function sameCategory(left: string, right: string): boolean {
+  return left.trim() === right.trim();
 }
