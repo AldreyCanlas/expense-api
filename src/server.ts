@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { budgetStatuses, parseBudget, requireMonth } from "./budgets.ts";
 import { HttpError } from "./errors.ts";
 import { ExpenseStore } from "./store.ts";
 import { filterExpenses, summarize } from "./summary.ts";
@@ -58,6 +59,27 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
 
     if (segments[0] === "summary" && segments.length === 1 && method === "GET") {
       send(response, 200, { summary: summarize(store.list(), readQuery(url)) });
+      return;
+    }
+
+    if (segments[0] === "budgets" && segments.length === 1) {
+      if (method === "PUT") {
+        const budget = store.setBudget(parseBudget(await readJson(request)));
+        send(response, 200, { budget });
+        return;
+      }
+      if (method === "GET") {
+        const month = requireMonth(optionalParam(url, "month"));
+        send(response, 200, { budgets: store.listBudgets(month) });
+        return;
+      }
+    }
+
+    if (segments[0] === "budgets" && segments[1] === "status" && segments.length === 2 && method === "GET") {
+      const month = requireMonth(optionalParam(url, "month"));
+      send(response, 200, {
+        statuses: budgetStatuses(store.listBudgets(month), store.list(), month),
+      });
       return;
     }
 

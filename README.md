@@ -65,6 +65,22 @@ Uses the same query parameters as `GET /expenses`.
 }
 ```
 
+### `PUT /budgets`
+
+Creates or replaces the limit for one category in a month.
+
+```json
+{ "month": "2026-01", "category": "food", "limit": 200 }
+```
+
+Category names match expenses exactly, including letter case.
+
+### `GET /budgets?month=YYYY-MM`
+
+### `GET /budgets/status?month=YYYY-MM`
+
+Returns one row per budget for that month. `spent` is the sum of matching expenses. `over` is true when spent is greater than the limit. Categories that have expenses but no budget are omitted.
+
 ## Checks
 
 ```bash

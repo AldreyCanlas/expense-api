@@ -33,3 +33,18 @@ export type Summary = {
   total: number;
   byCategory: CategoryTotal[];
 };
+
+export type Budget = {
+  month: string;
+  category: string;
+  limit: number;
+};
+
+export type BudgetStatus = {
+  month: string;
+  category: string;
+  limit: number;
+  spent: number;
+  remaining: number;
+  over: boolean;
+};

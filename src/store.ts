@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { Expense, NewExpense } from "./types.ts";
+import type { Budget, Expense, NewExpense } from "./types.ts";
 
 export class ExpenseStore {
   private readonly expenses = new Map<string, Expense>();
+  private readonly budgets = new Map<string, Budget>();
 
   create(input: NewExpense): Expense {
     const expense: Expense = {
@@ -32,4 +33,19 @@ export class ExpenseStore {
   delete(id: string): boolean {
     return this.expenses.delete(id);
   }
+
+  setBudget(budget: Budget): Budget {
+    this.budgets.set(budgetKey(budget.month, budget.category), budget);
+    return budget;
+  }
+
+  listBudgets(month: string): Budget[] {
+    return [...this.budgets.values()]
+      .filter((budget) => budget.month === month)
+      .sort((left, right) => left.category.localeCompare(right.category));
+  }
+}
+
+function budgetKey(month: string, category: string): string {
+  return `${month}\n${category}`;
 }
