@@ -42,16 +42,17 @@ export function parseOptionalDate(value: string | undefined, field: string): str
 }
 
 function parseAmount(value: unknown): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
+  const amount = typeof value === "string" ? amountFromString(value) : value;
+  if (typeof amount !== "number" || !Number.isFinite(amount)) {
     throw new HttpError(400, "invalid_amount", "amount must be a finite number.", "amount");
   }
-  if (value < 0) {
+  if (amount < 0) {
     throw new HttpError(400, "invalid_amount", "amount must be zero or greater.", "amount");
   }
-  if (value > MAX_AMOUNT) {
+  if (amount > MAX_AMOUNT) {
     throw new HttpError(400, "invalid_amount", "amount must be 1000000 or less.", "amount");
   }
-  if (decimalPlaces(value) > 2) {
+  if (!hasAtMostTwoDecimals(amount)) {
     throw new HttpError(
       400,
       "invalid_amount",
@@ -59,7 +60,15 @@ function parseAmount(value: unknown): number {
       "amount",
     );
   }
-  return value;
+  return amount;
+}
+
+function amountFromString(text: string): number {
+  const normalized = text.trim().replace(/,/g, "");
+  if (!/^\d+(\.\d+)?$/.test(normalized)) {
+    return Number.NaN;
+  }
+  return Number(normalized);
 }
 
 function parseCategory(value: unknown): string {
@@ -114,11 +123,7 @@ function isLeapYear(year: number): boolean {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
-function decimalPlaces(amount: number): number {
-  const text = amount.toString();
-  if (text.includes("e") || text.includes("E")) {
-    return 99;
-  }
-  const fraction = text.split(".")[1];
-  return fraction === undefined ? 0 : fraction.length;
+function hasAtMostTwoDecimals(amount: number): boolean {
+  const scaled = amount * 100;
+  return Math.abs(scaled - Math.round(scaled)) < Number.EPSILON;
 }

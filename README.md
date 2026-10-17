@@ -36,7 +36,7 @@ Amounts are decimal numbers in major units (for example, `12.5` dollars). Dates 
 }
 ```
 
-`note` is optional. `amount` must be from 0 through 1000000 with at most two decimal places. `category` is trimmed and must be 1 to 40 characters. `note` is trimmed and must be 500 characters or fewer. `occurredOn` must be a real `YYYY-MM-DD` date. Extra JSON fields are ignored.
+`note` is optional. `amount` may be sent as a number or as a decimal string such as `"12.50"` or `"1,200.50"`, and must be from 0 through 1000000 with at most two decimal places. `category` is trimmed and must be 1 to 40 characters. `note` is trimmed and must be 500 characters or fewer. `occurredOn` must be a real `YYYY-MM-DD` date. Extra JSON fields are ignored.
 
 Failed requests use a structured error. `field` is present when the failure belongs to one input.
 

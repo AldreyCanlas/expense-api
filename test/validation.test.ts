@@ -33,6 +33,19 @@ describe("expense validation", () => {
     assert.equal(expense.amount, 12.5);
   });
 
+  it("accepts an amount written as a decimal string", async () => {
+    const response = await post({ amount: "1,200.50", category: "rent", occurredOn: "2026-01-10" });
+    assert.equal(response.status, 201);
+    const expense = (response.body as { expense: Expense }).expense;
+    assert.equal(expense.amount, 1200.5);
+  });
+
+  it("rejects an amount that is not a number", async () => {
+    const response = await post({ amount: "abc", category: "food", occurredOn: "2026-01-10" });
+    assert.equal(response.status, 400);
+    assert.equal(codeOf(response.body), "invalid_amount");
+  });
+
   it("rejects a negative amount", async () => {
     const response = await post({ amount: -1, category: "food", occurredOn: "2026-01-10" });
     assert.equal(response.status, 400);
