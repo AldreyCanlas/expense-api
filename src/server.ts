@@ -78,7 +78,7 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
     if (segments[0] === "budgets" && segments[1] === "status" && segments.length === 2 && method === "GET") {
       const month = requireMonth(optionalParam(url, "month"));
       send(response, 200, {
-        statuses: budgetStatuses(store.listBudgets(month), store.list(), month),
+        statuses: budgetStatuses(store.listBudgets(month), store.values(), month),
       });
       return;
     }

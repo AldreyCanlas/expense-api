@@ -26,6 +26,10 @@ export class ExpenseStore {
     });
   }
 
+  values(): Iterable<Expense> {
+    return this.expenses.values();
+  }
+
   get(id: string): Expense | undefined {
     return this.expenses.get(id);
   }

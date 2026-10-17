@@ -54,20 +54,13 @@ export function requireMonth(value: string | undefined): string {
 
 export function budgetStatuses(
   budgets: readonly Budget[],
-  expenses: readonly Expense[],
+  expenses: Iterable<Expense>,
   month: string,
 ): BudgetStatus[] {
   return budgets
     .filter((budget) => budget.month === month)
     .map((budget) => {
-      const spent = sumAmounts(
-        expenses
-          .filter(
-            (expense) =>
-              expenseMonth(expense.occurredOn) === month && sameCategory(expense.category, budget.category),
-          )
-          .map((expense) => expense.amount),
-      );
+      const spent = sumAmounts(amountsFor(expenses, month, budget.category));
       return {
         month,
         category: budget.category,
@@ -78,6 +71,16 @@ export function budgetStatuses(
       };
     })
     .sort((left, right) => left.category.localeCompare(right.category));
+}
+
+function amountsFor(expenses: Iterable<Expense>, month: string, category: string): number[] {
+  const amounts: number[] = [];
+  for (const expense of expenses) {
+    if (expenseMonth(expense.occurredOn) === month && sameCategory(expense.category, category)) {
+      amounts.push(expense.amount);
+    }
+  }
+  return amounts;
 }
 
 function expenseMonth(occurredOn: string): string {
