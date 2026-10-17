@@ -40,8 +40,14 @@ export class ExpenseStore {
   }
 
   listBudgets(month: string): Budget[] {
-    return [...this.budgets.values()]
-      .filter((budget) => budget.month === month)
+    const inEffect = new Map<string, Budget>();
+    for (const budget of this.budgets.values()) {
+      if (budget.month <= month) {
+        inEffect.set(budget.category, budget);
+      }
+    }
+    return [...inEffect.values()]
+      .map((budget) => ({ ...budget, month }))
       .sort((left, right) => left.category.localeCompare(right.category));
   }
 }

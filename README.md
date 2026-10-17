@@ -75,11 +75,15 @@ Creates or replaces the limit for one category in a month.
 
 Category names match expenses by letter case. Spaces at either end are ignored.
 
+A budget also applies to every later month until a newer budget is saved for the same category.
+
 ### `GET /budgets?month=YYYY-MM`
+
+Returns the budgets in effect for that month, including ones carried forward from earlier months. Each row reports the requested month.
 
 ### `GET /budgets/status?month=YYYY-MM`
 
-Returns one row per budget for that month. `spent` is the sum of matching expenses. `over` is true when spent is greater than the limit. Categories that have expenses but no budget are omitted.
+Returns one row per budget in effect for that month. `spent` is the sum of matching expenses. `over` is true when spent is greater than the limit. Categories that have expenses but no budget are omitted.
 
 ## Checks
 

@@ -64,6 +64,25 @@ describe("category budgets", { concurrency: false }, () => {
     assert.equal(food?.over, true);
   });
 
+  it("carries a budget into a later month that has none of its own", async () => {
+    const listed = await request(`${app.url}/budgets?month=2026-02`);
+    assert.deepEqual((listed.body as { budgets: Budget[] }).budgets, [
+      { month: "2026-02", category: "food", limit: 50 },
+    ]);
+
+    const status = await request(`${app.url}/budgets/status?month=2026-02`);
+    assert.deepEqual((status.body as { statuses: BudgetStatus[] }).statuses, [
+      {
+        month: "2026-02",
+        category: "food",
+        limit: 50,
+        spent: 15,
+        remaining: 35,
+        over: false,
+      },
+    ]);
+  });
+
   it("reports zero spend for a budget with no matching expenses", async () => {
     await request(`${app.url}/budgets`, {
       method: "PUT",
@@ -80,6 +99,32 @@ describe("category budgets", { concurrency: false }, () => {
         remaining: 30,
         over: false,
       },
+      {
+        month: "2026-03",
+        category: "food",
+        limit: 50,
+        spent: 0,
+        remaining: 50,
+        over: false,
+      },
+    ]);
+  });
+
+  it("uses a newer budget instead of the carried one", async () => {
+    await request(`${app.url}/budgets`, {
+      method: "PUT",
+      body: JSON.stringify({ month: "2026-04", category: "food", limit: 80 }),
+    });
+
+    const april = await request(`${app.url}/budgets?month=2026-04`);
+    assert.deepEqual((april.body as { budgets: Budget[] }).budgets, [
+      { month: "2026-04", category: "books", limit: 30 },
+      { month: "2026-04", category: "food", limit: 80 },
+    ]);
+
+    const february = await request(`${app.url}/budgets?month=2026-02`);
+    assert.deepEqual((february.body as { budgets: Budget[] }).budgets, [
+      { month: "2026-02", category: "food", limit: 50 },
     ]);
   });
 
