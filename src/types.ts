@@ -31,5 +31,7 @@ export type Summary = {
   category: string | null;
   count: number;
   total: number;
+  days: number | null;
+  dailyAverage: number | null;
   byCategory: CategoryTotal[];
 };

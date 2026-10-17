@@ -40,7 +40,7 @@ Amounts are decimal numbers in major units (for example, `12.5` dollars). Totals
 
 ### `GET /expenses`
 
-Optional query parameters: `from`, `to`, `category`.
+Optional query parameters: `from`, `to`, `category`. `month=YYYY-MM` is a shorthand that sets `from` and `to` to the first and last day of that month.
 
 ### `GET /expenses/:id`
 
@@ -50,7 +50,7 @@ Returns `204` when the expense is removed.
 
 ### `GET /summary`
 
-Uses the same query parameters as `GET /expenses`.
+Uses the same query parameters as `GET /expenses`. When `from` and `to` are both set, `days` is the inclusive length of the range and `dailyAverage` is the total spread across those days. Both are `null` otherwise.
 
 ```json
 {
@@ -60,6 +60,8 @@ Uses the same query parameters as `GET /expenses`.
     "category": null,
     "count": 2,
     "total": 15,
+    "days": 31,
+    "dailyAverage": 0.48,
     "byCategory": [{ "category": "food", "total": 15, "count": 2 }]
   }
 }

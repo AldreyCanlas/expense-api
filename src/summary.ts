@@ -1,4 +1,4 @@
-import { isWithinRange } from "./dates.ts";
+import { daysBetween, isWithinRange } from "./dates.ts";
 import { sumAmounts } from "./money.ts";
 import type { Expense, ExpenseQuery, Summary } from "./types.ts";
 
@@ -33,12 +33,17 @@ export function summarize(expenses: readonly Expense[], query: ExpenseQuery = {}
     }))
     .sort((left, right) => left.category.localeCompare(right.category));
 
+  const total = sumAmounts(matched.map((expense) => expense.amount));
+  const days = query.from !== undefined && query.to !== undefined ? daysBetween(query.from, query.to) : null;
+
   return {
     from: query.from ?? null,
     to: query.to ?? null,
     category: query.category ?? null,
     count: matched.length,
-    total: sumAmounts(matched.map((expense) => expense.amount)),
+    total,
+    days,
+    dailyAverage: days === null ? null : Math.round((total / days) * 100) / 100,
     byCategory,
   };
 }

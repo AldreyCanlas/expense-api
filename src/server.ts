@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { monthRange } from "./dates.ts";
 import { HttpError } from "./errors.ts";
 import { ExpenseStore } from "./store.ts";
 import { filterExpenses, summarize } from "./summary.ts";
@@ -73,6 +74,18 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
 }
 
 function readQuery(url: URL): ExpenseQuery {
+  const month = optionalParam(url, "month");
+  if (month !== undefined) {
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      throw new HttpError(400, "month must be YYYY-MM.");
+    }
+    const range = monthRange(month);
+    return {
+      from: range.from,
+      to: range.to,
+      category: optionalParam(url, "category"),
+    };
+  }
   return {
     from: optionalParam(url, "from"),
     to: optionalParam(url, "to"),
