@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import { ExpenseStore } from "../src/store.ts";
 import type { Expense } from "../src/types.ts";
 import { request, startTestApp, type TestApp } from "./helpers.ts";
 
@@ -58,6 +59,33 @@ describe("expense routes", () => {
       body: JSON.stringify({ category: "food", occurredOn: "2026-04-04" }),
     });
     assert.equal(response.status, 400);
-    assert.equal((response.body as { error: string }).error, "amount must be a number.");
+    assert.deepEqual(response.body, {
+      error: {
+        code: "invalid_amount",
+        message: "amount must be a finite number.",
+        field: "amount",
+      },
+    });
   });
 });
+
+describe("expense count", { concurrency: false }, () => {
+  let app: TestApp;
+
+  before(async () => {
+    const store = new ExpenseStore();
+    store.create({ amount: 18, category: "groceries", note: "market", occurredOn: "2026-04-04" });
+    app = await startTestApp(store);
+  });
+
+  after(async () => {
+    await app.close();
+  });
+
+  it("counts a row whose date sits inside the window", async () => {
+    const response = await request(`${app.url}/expenses/count?from=2026-04-01&to=2026-04-30`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body, { count: 1 });
+  });
+});
+

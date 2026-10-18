@@ -51,11 +51,27 @@ Amounts are decimal numbers in major units (for example, `12.5` dollars). Dates 
 }
 ```
 
-`note` is optional.
+`note` is optional. `amount` may be sent as a number or as a decimal string such as `"12.50"` or `"1,200.50"`, and must be from 0 through 1000000 with at most two decimal places. `category` is trimmed and must be 1 to 40 characters. `note` is trimmed and must be 500 characters or fewer. `occurredOn` must be a real `YYYY-MM-DD` date. Extra JSON fields are ignored.
+
+Failed requests use a structured error. `field` is present when the failure belongs to one input.
+
+```json
+{
+  "error": {
+    "code": "invalid_date",
+    "message": "occurredOn must be a real calendar date.",
+    "field": "occurredOn"
+  }
+}
+```
 
 ### `GET /expenses`
 
-Optional query parameters: `from`, `to`, `category`.
+Optional query parameters: `from`, `to`, `category`, and `on`. `from`, `to`, and `on` must be real calendar dates when they are present. `on=YYYY-MM-DD` is a shortcut that limits results to a single day by setting `from` and `to` to that date.
+
+### `GET /expenses/count`
+
+Uses the same query parameters as `GET /expenses` and returns how many rows match.
 
 ### `GET /expenses/:id`
 

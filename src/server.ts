@@ -1,9 +1,10 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { HttpError } from "./errors.ts";
+import { errorBody, HttpError } from "./errors.ts";
 import { ExpenseStore } from "./store.ts";
+import { countExpenses } from "./counts.ts";
 import { filterExpenses, summarize } from "./summary.ts";
 import type { ExpenseQuery } from "./types.ts";
-import { parseCreateExpense } from "./validation.ts";
+import { canonicalCategory, parseCreateExpense, parseOptionalDate } from "./validation.ts";
 
 const MAX_BODY_BYTES = 1_000_000;
 
@@ -36,19 +37,24 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
       }
     }
 
+    if (segments[0] === "expenses" && segments[1] === "count" && segments.length === 2 && method === "GET") {
+      send(response, 200, { count: countExpenses(store.list(), readQuery(url)) });
+      return;
+    }
+
     if (segments[0] === "expenses" && segments.length === 2) {
       const id = segments[1] ?? "";
       if (method === "GET") {
         const expense = store.get(id);
         if (expense === undefined) {
-          throw new HttpError(404, "Expense not found.");
+          throw new HttpError(404, "not_found", "Expense not found.");
         }
         send(response, 200, { expense });
         return;
       }
       if (method === "DELETE") {
         if (!store.delete(id)) {
-          throw new HttpError(404, "Expense not found.");
+          throw new HttpError(404, "not_found", "Expense not found.");
         }
         response.writeHead(204);
         response.end();
@@ -61,23 +67,36 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
       return;
     }
 
-    throw new HttpError(404, "Route not found.");
+    throw new HttpError(404, "route_not_found", "Route not found.");
   } catch (error) {
     if (error instanceof HttpError) {
-      send(response, error.status, { error: error.message });
+      send(response, error.status, errorBody(error));
       return;
     }
-    const detail = error instanceof Error ? (error.stack ?? error.message) : "Unknown error.";
-    send(response, 500, { error: detail });
+    console.error(error);
+    send(response, 500, errorBody(new HttpError(500, "internal_error", "Unexpected error.")));
   }
 }
 
 function readQuery(url: URL): ExpenseQuery {
+  const on = parseOptionalDate(optionalParam(url, "on"), "on");
+  if (on !== undefined) {
+    return { from: on, to: on, category: readCategory(url) };
+  }
   return {
-    from: optionalParam(url, "from"),
-    to: optionalParam(url, "to"),
-    category: optionalParam(url, "category"),
+    from: parseOptionalDate(optionalParam(url, "from"), "from"),
+    to: parseOptionalDate(optionalParam(url, "to"), "to"),
+    category: readCategory(url),
   };
+}
+
+function readCategory(url: URL): string | undefined {
+  const value = optionalParam(url, "category");
+  if (value === undefined) {
+    return undefined;
+  }
+  const category = canonicalCategory(value);
+  return category.length === 0 ? undefined : category;
 }
 
 function optionalParam(url: URL, name: string): string | undefined {
@@ -96,7 +115,7 @@ function readJson(request: IncomingMessage): Promise<unknown> {
     request.on("data", (chunk: Buffer) => {
       size += chunk.length;
       if (size > MAX_BODY_BYTES) {
-        reject(new HttpError(413, "Request body is too large."));
+        reject(new HttpError(413, "body_too_large", "Request body is too large."));
         request.destroy();
         return;
       }
@@ -105,13 +124,13 @@ function readJson(request: IncomingMessage): Promise<unknown> {
 
     request.on("end", () => {
       if (chunks.length === 0) {
-        reject(new HttpError(400, "Expected a JSON body."));
+        reject(new HttpError(400, "invalid_body", "Expected a JSON body."));
         return;
       }
       try {
         resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
       } catch {
-        reject(new HttpError(400, "Malformed JSON."));
+        reject(new HttpError(400, "malformed_json", "Malformed JSON."));
       }
     });
 
