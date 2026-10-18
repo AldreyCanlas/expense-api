@@ -73,6 +73,10 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
 }
 
 function readQuery(url: URL): ExpenseQuery {
+  const on = parseOptionalDate(optionalParam(url, "on"), "on");
+  if (on !== undefined) {
+    return { from: on, to: on, category: readCategory(url) };
+  }
   return {
     from: parseOptionalDate(optionalParam(url, "from"), "from"),
     to: parseOptionalDate(optionalParam(url, "to"), "to"),
