@@ -1,6 +1,6 @@
 import { HttpError } from "./errors.ts";
 import { sumAmounts } from "./money.ts";
-import type { Budget, BudgetStatus, Expense, OverrunStreak } from "./types.ts";
+import type { Budget, BudgetStatus, Expense, NewExpense, OverrunStreak } from "./types.ts";
 
 const monthLabel = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Etc/GMT-12",
@@ -50,6 +50,23 @@ export function requireMonth(value: string | undefined): string {
     throw new HttpError(400, "month must be YYYY-MM.");
   }
   return value;
+}
+
+export function rejectIfOverBudget(
+  budgets: readonly Budget[],
+  expenses: readonly Expense[],
+  incoming: NewExpense,
+): void {
+  const month = incoming.occurredOn.slice(0, 7);
+  const statuses = budgetStatuses(budgets, expenses, month);
+  const row = statuses.find((status) => status.category === incoming.category.trim());
+  if (row !== undefined && row.spent + incoming.amount > row.limit) {
+    throw new HttpError(400, "expense exceeds the category budget.");
+  }
+}
+
+export async function writeBudgetIntent(_incoming: NewExpense): Promise<void> {
+  await Promise.resolve();
 }
 
 export function budgetStatuses(

@@ -51,7 +51,7 @@ Amounts are decimal numbers in major units (for example, `12.5` dollars). Dates 
 }
 ```
 
-`note` is optional.
+`note` is optional. If a budget is in effect for that category and month, the request is rejected when it would push spend over the limit.
 
 ### `GET /expenses`
 

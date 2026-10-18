@@ -128,6 +128,14 @@ describe("category budgets", { concurrency: false }, () => {
     ]);
   });
 
+  it("rejects an expense that would exceed the budget", async () => {
+    const response = await request(`${app.url}/expenses`, {
+      method: "POST",
+      body: JSON.stringify({ amount: 1, category: "food", note: "", occurredOn: "2026-01-15" }),
+    });
+    assert.equal(response.status, 400);
+  });
+
   it("rejects a month that is not YYYY-MM", async () => {
     const response = await request(`${app.url}/budgets`, {
       method: "PUT",

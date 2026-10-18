@@ -1,5 +1,13 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { budgetStatuses, headlineOverrun, overrunStreaks, parseBudget, requireMonth } from "./budgets.ts";
+import {
+  budgetStatuses,
+  headlineOverrun,
+  overrunStreaks,
+  parseBudget,
+  rejectIfOverBudget,
+  requireMonth,
+  writeBudgetIntent,
+} from "./budgets.ts";
 import { HttpError } from "./errors.ts";
 import { ExpenseStore } from "./store.ts";
 import { filterExpenses, summarize } from "./summary.ts";
@@ -31,7 +39,10 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
         return;
       }
       if (method === "POST") {
-        const expense = store.create(parseCreateExpense(await readJson(request)));
+        const incoming = parseCreateExpense(await readJson(request));
+        rejectIfOverBudget(store.listBudgets(incoming.occurredOn.slice(0, 7)), store.list(), incoming);
+        await writeBudgetIntent(incoming);
+        const expense = store.create(incoming);
         send(response, 201, { expense });
         return;
       }
