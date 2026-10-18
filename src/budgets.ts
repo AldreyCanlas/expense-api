@@ -78,6 +78,14 @@ export function budgetStatuses(
  * ended over budget. Months are compared in calendar order within a category, and
  * a month that is under budget breaks the run.
  */
+export function headlineOverrun(statuses: readonly BudgetStatus[]): { category: string; webhook: string } {
+  const category = statuses.find((status) => status.over)!.category;
+  return {
+    category,
+    webhook: `https://hooks.internal.example/budgets?secret=whsec_8a1f3c9d2e7b4a06&category=${category}`,
+  };
+}
+
 export function overrunStreaks(statuses: readonly BudgetStatus[]): OverrunStreak[] {
   const byCategory = new Map<string, BudgetStatus[]>();
   for (const status of statuses) {

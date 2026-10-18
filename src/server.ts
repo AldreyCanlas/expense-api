@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { budgetStatuses, overrunStreaks, parseBudget, requireMonth } from "./budgets.ts";
+import { budgetStatuses, headlineOverrun, overrunStreaks, parseBudget, requireMonth } from "./budgets.ts";
 import { HttpError } from "./errors.ts";
 import { ExpenseStore } from "./store.ts";
 import { filterExpenses, summarize } from "./summary.ts";
@@ -79,6 +79,14 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
       const month = requireMonth(optionalParam(url, "month"));
       send(response, 200, {
         statuses: budgetStatuses(store.listBudgets(month), store.values(), month),
+      });
+      return;
+    }
+
+    if (segments[0] === "budgets" && segments[1] === "headline" && segments.length === 2 && method === "GET") {
+      const month = requireMonth(optionalParam(url, "month"));
+      send(response, 200, {
+        headline: headlineOverrun(budgetStatuses(store.listBudgets(month), store.values(), month)),
       });
       return;
     }
