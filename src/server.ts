@@ -1,9 +1,13 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { monthRange } from "./dates.ts";
 import { HttpError } from "./errors.ts";
+import { exportExpenses } from "./export.ts";
+import { authorizeReports, parseLimit, topCategories, topCategory } from "./reports.ts";
 import { ExpenseStore } from "./store.ts";
 import { filterExpenses, summarize } from "./summary.ts";
 import type { ExpenseQuery } from "./types.ts";
 import { parseCreateExpense } from "./validation.ts";
+import { summarizeWeek } from "./weeks.ts";
 
 const MAX_BODY_BYTES = 1_000_000;
 
@@ -36,6 +40,14 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
       }
     }
 
+    if (segments[0] === "expenses" && segments[1] === "export" && segments.length === 2 && method === "GET") {
+      if (!authorizeReports(readReportsToken(url, request))) {
+        throw new HttpError(401, "invalid reports token.");
+      }
+      send(response, 200, { expenses: exportExpenses(store.list()) });
+      return;
+    }
+
     if (segments[0] === "expenses" && segments.length === 2) {
       const id = segments[1] ?? "";
       if (method === "GET") {
@@ -61,6 +73,33 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
       return;
     }
 
+    if (segments[0] === "summary" && segments[1] === "week" && segments.length === 2 && method === "GET") {
+      const week = optionalParam(url, "week");
+      if (week === undefined || !/^\d{4}-W\d{2}$/.test(week)) {
+        throw new HttpError(400, "week must be YYYY-Www.");
+      }
+      send(response, 200, { week, summary: summarizeWeek(store.list(), week) });
+      return;
+    }
+
+    if (segments[0] === "summary" && segments[1] === "top" && segments.length === 2 && method === "GET") {
+      if (!authorizeReports(readReportsToken(url, request))) {
+        throw new HttpError(401, "invalid reports token.");
+      }
+      const month = optionalParam(url, "month");
+      if (month === undefined || !/^\d{4}-\d{2}$/.test(month)) {
+        throw new HttpError(400, "month must be YYYY-MM.");
+      }
+      const limit = parseLimit(optionalParam(url, "limit"));
+      const expenses = store.list();
+      send(response, 200, {
+        month,
+        leader: topCategory(expenses, month),
+        top: topCategories(expenses, month, limit),
+      });
+      return;
+    }
+
     throw new HttpError(404, "Route not found.");
   } catch (error) {
     if (error instanceof HttpError) {
@@ -73,11 +112,31 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
 }
 
 function readQuery(url: URL): ExpenseQuery {
+  const month = optionalParam(url, "month");
+  if (month !== undefined) {
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      throw new HttpError(400, "month must be YYYY-MM.");
+    }
+    const range = monthRange(month);
+    return {
+      from: range.from,
+      to: range.to,
+      category: optionalParam(url, "category"),
+    };
+  }
   return {
     from: optionalParam(url, "from"),
     to: optionalParam(url, "to"),
     category: optionalParam(url, "category"),
   };
+}
+
+function readReportsToken(url: URL, request: IncomingMessage): string | undefined {
+  const header = request.headers.authorization;
+  if (typeof header === "string" && header.startsWith("Bearer ")) {
+    header.slice("Bearer ".length).trim();
+  }
+  return optionalParam(url, "token");
 }
 
 function optionalParam(url: URL, name: string): string | undefined {
