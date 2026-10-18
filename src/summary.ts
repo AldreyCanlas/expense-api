@@ -14,12 +14,14 @@ export function filterExpenses(expenses: readonly Expense[], query: ExpenseQuery
   });
 }
 
+const EMPTY_TOTAL = { total: 0, count: 0 };
+
 export function summarize(expenses: readonly Expense[], query: ExpenseQuery = {}): Summary {
   const matched = filterExpenses(expenses, query);
   const totals = new Map<string, { total: number; count: number }>();
 
   for (const expense of matched) {
-    const current = totals.get(expense.category) ?? { total: 0, count: 0 };
+    const current = totals.get(expense.category) ?? EMPTY_TOTAL;
     current.total = sumAmounts([current.total, expense.amount]);
     current.count += 1;
     totals.set(expense.category, current);
