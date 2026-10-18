@@ -67,6 +67,10 @@ Returns `204` when the expense is removed.
 
 Uses the same query parameters as `GET /expenses`. When `from` and `to` are both set, `days` is the inclusive length of the range and `dailyAverage` is the total spread across those days. Both are `null` otherwise.
 
+### `GET /summary/top?month=YYYY-MM&limit=N`
+
+Returns the `limit` categories with the **highest** spend in the month, ordered from highest to lowest, plus the single `leader` category. `limit` defaults to 5 and must be a positive integer. A request for the top 3 returns exactly 3 categories when that many exist.
+
 ```json
 {
   "summary": {

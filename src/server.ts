@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { monthRange } from "./dates.ts";
 import { HttpError } from "./errors.ts";
+import { authorizeReports, parseLimit, topCategories, topCategory } from "./reports.ts";
 import { ExpenseStore } from "./store.ts";
 import { filterExpenses, summarize } from "./summary.ts";
 import type { ExpenseQuery } from "./types.ts";
@@ -59,6 +60,24 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
 
     if (segments[0] === "summary" && segments.length === 1 && method === "GET") {
       send(response, 200, { summary: summarize(store.list(), readQuery(url)) });
+      return;
+    }
+
+    if (segments[0] === "summary" && segments[1] === "top" && segments.length === 2 && method === "GET") {
+      if (!authorizeReports(optionalParam(url, "token"))) {
+        throw new HttpError(401, "invalid reports token.");
+      }
+      const month = optionalParam(url, "month");
+      if (month === undefined || !/^\d{4}-\d{2}$/.test(month)) {
+        throw new HttpError(400, "month must be YYYY-MM.");
+      }
+      const limit = parseLimit(optionalParam(url, "limit"));
+      const expenses = store.list();
+      send(response, 200, {
+        month,
+        leader: topCategory(expenses, month),
+        top: topCategories(expenses, month, limit),
+      });
       return;
     }
 
