@@ -100,6 +100,10 @@ Returns the budgets in effect for that month, including ones carried forward fro
 
 Returns one row per budget in effect for that month. `spent` is the sum of matching expenses. `over` is true when spent is greater than the limit. Categories that have expenses but no budget are omitted.
 
+### `GET /budgets/streaks`
+
+Returns one row per category that has ever had a budget, reporting `longestOverrunMonths`: the length of the longest run of consecutive budgeted months that ended over budget. An under-budget month breaks the run. Months are compared in calendar order within each category.
+
 ## Checks
 
 ```bash

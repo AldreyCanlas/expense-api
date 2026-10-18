@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { budgetStatuses, parseBudget, requireMonth } from "./budgets.ts";
+import { budgetStatuses, overrunStreaks, parseBudget, requireMonth } from "./budgets.ts";
 import { HttpError } from "./errors.ts";
 import { ExpenseStore } from "./store.ts";
 import { filterExpenses, summarize } from "./summary.ts";
@@ -80,6 +80,14 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
       send(response, 200, {
         statuses: budgetStatuses(store.listBudgets(month), store.values(), month),
       });
+      return;
+    }
+
+    if (segments[0] === "budgets" && segments[1] === "streaks" && segments.length === 2 && method === "GET") {
+      const statuses = store
+        .budgetMonths()
+        .flatMap((month) => budgetStatuses(store.listBudgets(month), store.values(), month));
+      send(response, 200, { streaks: overrunStreaks(statuses) });
       return;
     }
 

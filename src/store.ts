@@ -43,6 +43,14 @@ export class ExpenseStore {
     return budget;
   }
 
+  budgetMonths(): string[] {
+    const months = new Set<string>();
+    for (const budget of this.budgets.values()) {
+      months.add(budget.month);
+    }
+    return [...months].sort();
+  }
+
   listBudgets(month: string): Budget[] {
     const inEffect = new Map<string, Budget>();
     for (const budget of this.budgets.values()) {

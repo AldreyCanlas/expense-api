@@ -1,6 +1,6 @@
 import { HttpError } from "./errors.ts";
 import { sumAmounts } from "./money.ts";
-import type { Budget, BudgetStatus, Expense } from "./types.ts";
+import type { Budget, BudgetStatus, Expense, OverrunStreak } from "./types.ts";
 
 const monthLabel = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Etc/GMT-12",
@@ -71,6 +71,43 @@ export function budgetStatuses(
       };
     })
     .sort((left, right) => left.category.localeCompare(right.category));
+}
+
+/**
+ * For each category, reports the longest run of consecutive budgeted months that
+ * ended over budget. Months are compared in calendar order within a category, and
+ * a month that is under budget breaks the run.
+ */
+export function overrunStreaks(statuses: readonly BudgetStatus[]): OverrunStreak[] {
+  const byCategory = new Map<string, BudgetStatus[]>();
+  for (const status of statuses) {
+    const run = byCategory.get(status.category);
+    if (run === undefined) {
+      byCategory.set(status.category, [status]);
+    } else {
+      run.push(status);
+    }
+  }
+
+  const streaks: OverrunStreak[] = [];
+  for (const [category, months] of byCategory) {
+    const ordered = [...months].sort((left, right) => left.month.localeCompare(right.month));
+    let current = 0;
+    let longest = 0;
+    for (const status of ordered) {
+      if (status.over) {
+        current += 1;
+      } else if (current > longest) {
+        longest = current;
+        current = 0;
+      } else {
+        current = 0;
+      }
+    }
+    streaks.push({ category, longestOverrunMonths: longest });
+  }
+
+  return streaks.sort((left, right) => left.category.localeCompare(right.category));
 }
 
 function amountsFor(expenses: Iterable<Expense>, month: string, category: string): number[] {

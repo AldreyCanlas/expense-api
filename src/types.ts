@@ -48,3 +48,8 @@ export type BudgetStatus = {
   remaining: number;
   over: boolean;
 };
+
+export type OverrunStreak = {
+  category: string;
+  longestOverrunMonths: number;
+};

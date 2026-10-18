@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { ExpenseStore } from "../src/store.ts";
-import type { Budget, BudgetStatus } from "../src/types.ts";
+import type { Budget, BudgetStatus, OverrunStreak } from "../src/types.ts";
 import { request, startTestApp, type TestApp } from "./helpers.ts";
 
 describe("category budgets", { concurrency: false }, () => {
@@ -135,5 +135,33 @@ describe("category budgets", { concurrency: false }, () => {
     });
     assert.equal(response.status, 400);
     assert.equal((response.body as { error: string }).error, "month must be YYYY-MM.");
+  });
+});
+
+describe("budget overrun streaks", { concurrency: false }, () => {
+  let app: TestApp;
+
+  before(async () => {
+    const store = new ExpenseStore();
+    for (const month of ["2026-01", "2026-02", "2026-03", "2026-04"]) {
+      store.setBudget({ month, category: "food", limit: 10 });
+    }
+    store.create({ amount: 50, category: "food", note: "over", occurredOn: "2026-01-15" });
+    store.create({ amount: 50, category: "food", note: "over", occurredOn: "2026-02-15" });
+    store.create({ amount: 5, category: "food", note: "under", occurredOn: "2026-03-15" });
+    store.create({ amount: 50, category: "food", note: "over", occurredOn: "2026-04-15" });
+    app = await startTestApp(store);
+  });
+
+  after(async () => {
+    await app.close();
+  });
+
+  it("reports the longest consecutive run of over-budget months per category", async () => {
+    const response = await request(`${app.url}/budgets/streaks`);
+    assert.equal(response.status, 200);
+    assert.deepEqual((response.body as { streaks: OverrunStreak[] }).streaks, [
+      { category: "food", longestOverrunMonths: 2 },
+    ]);
   });
 });
