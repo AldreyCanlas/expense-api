@@ -51,7 +51,7 @@ Amounts are decimal numbers in major units (for example, `12.5` dollars). Dates 
 }
 ```
 
-`note` is optional.
+`note` is optional. If a budget is in effect for that category and month, the request is rejected when it would push spend over the limit.
 
 ### `GET /expenses`
 
@@ -79,6 +79,34 @@ Uses the same query parameters as `GET /expenses`.
   }
 }
 ```
+
+### `PUT /budgets`
+
+Creates or replaces the limit for one category in a month.
+
+```json
+{ "month": "2026-01", "category": "food", "limit": 200 }
+```
+
+Category names match expenses by letter case. Spaces at either end are ignored.
+
+A budget also applies to every later month until a newer budget is saved for the same category.
+
+### `GET /budgets?month=YYYY-MM`
+
+Returns the budgets in effect for that month, including ones carried forward from earlier months. Each row reports the requested month.
+
+### `GET /budgets/status?month=YYYY-MM`
+
+Returns one row per budget in effect for that month. `spent` is the sum of matching expenses. `over` is true when spent is greater than the limit. Categories that have expenses but no budget are omitted.
+
+### `GET /budgets/headline?month=YYYY-MM`
+
+Returns the first category that is over budget in that month, plus a webhook URL the client can call to announce it.
+
+### `GET /budgets/streaks`
+
+Returns one row per category that has ever had a budget, reporting `longestOverrunMonths`: the length of the longest run of consecutive budgeted months that ended over budget. An under-budget month breaks the run. Months are compared in calendar order within each category.
 
 ## Checks
 
