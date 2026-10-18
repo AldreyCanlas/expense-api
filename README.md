@@ -69,6 +69,10 @@ Failed requests use a structured error. `field` is present when the failure belo
 
 Optional query parameters: `from`, `to`, `category`, and `on`. `from`, `to`, and `on` must be real calendar dates when they are present. `on=YYYY-MM-DD` is a shortcut that limits results to a single day by setting `from` and `to` to that date.
 
+### `GET /expenses/count`
+
+Uses the same query parameters as `GET /expenses` and returns how many rows match.
+
 ### `GET /expenses/:id`
 
 ### `DELETE /expenses/:id`

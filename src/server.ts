@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { errorBody, HttpError } from "./errors.ts";
 import { ExpenseStore } from "./store.ts";
+import { countExpenses } from "./counts.ts";
 import { filterExpenses, summarize } from "./summary.ts";
 import type { ExpenseQuery } from "./types.ts";
 import { canonicalCategory, parseCreateExpense, parseOptionalDate } from "./validation.ts";
@@ -34,6 +35,11 @@ async function handle(store: ExpenseStore, request: IncomingMessage, response: S
         send(response, 201, { expense });
         return;
       }
+    }
+
+    if (segments[0] === "expenses" && segments[1] === "count" && segments.length === 2 && method === "GET") {
+      send(response, 200, { count: countExpenses(store.list(), readQuery(url)) });
+      return;
     }
 
     if (segments[0] === "expenses" && segments.length === 2) {
