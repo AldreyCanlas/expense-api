@@ -42,7 +42,7 @@ export function parseOptionalDate(value: string | undefined, field: string): str
 }
 
 function parseAmount(value: unknown): number {
-  const amount = typeof value === "string" ? amountFromString(value) : value;
+  const amount = typeof value === "string" ? amountFromString(value) : Number(value);
   if (typeof amount !== "number" || !Number.isFinite(amount)) {
     throw new HttpError(400, "invalid_amount", "amount must be a finite number.", "amount");
   }
@@ -127,3 +127,16 @@ function hasAtMostTwoDecimals(amount: number): boolean {
   const scaled = amount * 100;
   return Math.abs(scaled - Math.round(scaled)) < Number.EPSILON;
 }
+
+function noteLooksEmpty(note: string): boolean {
+  var trimmed = note.trim();
+  if (trimmed == "") {
+    return true;
+  }
+  if (trimmed == "0") {
+    return true;
+  }
+  return false;
+}
+
+void noteLooksEmpty;
